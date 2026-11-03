@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ทริปเชียงใหม่ Pocari Trail</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one highway strip per day running down the page; each stop hangs off a node, EV charge stops carry a battery gauge, race day splits runners and family. */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --ink:#152033; --muted:#5b6678; --line:#d6dce6;
+  --road:#1f5fae; --road-ink:#ffffff;      /* Thai DOH highway-sign blue */
+  --charge:#178a55; --charge-soft:#e3f4ea;
+  --opt:#b86a00; --opt-soft:#fbf0de;
+  --fam:#8a45b5; --fam-soft:#f3e8fa;
+  --run-soft:#e3edf9;
+  --warn:#b3261e;
+  --f-display:"Chakra Petch","IBM Plex Sans Thai",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans Thai",system-ui,-apple-system,"Sukhumvit Set",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e141d; --surface:#161e2a; --ink:#e6ebf2; --muted:#9aa6b8; --line:#2a3546;
+  --road:#4b8ee0; --road-ink:#08121f;
+  --charge:#4cc489; --charge-soft:#11291e;
+  --opt:#e6a24a; --opt-soft:#2a2011;
+  --fam:#c79ae8; --fam-soft:#251a2f;
+  --run-soft:#13233a;
+  --warn:#ef7a72; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0e141d; --surface:#161e2a; --ink:#e6ebf2; --muted:#9aa6b8; --line:#2a3546;
+  --road:#4b8ee0; --road-ink:#08121f;
+  --charge:#4cc489; --charge-soft:#11291e;
+  --opt:#e6a24a; --opt-soft:#2a2011;
+  --fam:#c79ae8; --fam-soft:#251a2f;
+  --run-soft:#13233a;
+  --warn:#ef7a72; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:760px;margin:0 auto;padding-block:28px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:36px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.25}
+h1{font-size:clamp(28px,6vw,40px);font-weight:700}
+h2{font-size:24px;font-weight:600}
+h3{font-size:17px;font-weight:600}
+p{margin:0}
+a{color:var(--road)}
+a:focus-visible{outline:2px solid var(--road);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* header */
+.head{display:flex;flex-direction:column;gap:14px}
+.eyebrow{font-family:var(--f-display);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.route-line{display:flex;flex-wrap:wrap;align-items:center;gap:8px;color:var(--muted)}
+.shield{display:inline-grid;place-items:center;min-width:34px;height:30px;padding:0 8px;border-radius:6px 6px 14px 14px;
+  background:var(--road);color:var(--road-ink);font-family:var(--f-display);font-weight:700;font-size:16px}
+.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.fact{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.fact b{font-family:var(--f-mono);font-size:20px;font-weight:600}
+.fact span{font-size:13px;color:var(--muted)}
+@media (max-width:560px){.facts{grid-template-columns:repeat(2,1fr)}}
+.lede{color:var(--muted);max-width:62ch}
+
+/* day nav */
+.daynav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);
+  margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)));padding:10px max(16px,env(safe-area-inset-left,0px));
+  border-bottom:1px solid var(--line);overflow-x:auto}
+.daynav ul{list-style:none;margin:0;padding:0;display:flex;gap:8px;width:max-content}
+.daynav a{display:flex;flex-direction:column;align-items:center;min-width:58px;padding:4px 10px;border:1px solid var(--line);border-radius:8px;
+  background:var(--surface);text-decoration:none;color:var(--ink);line-height:1.3}
+.daynav a b{font-family:var(--f-mono);font-size:16px}
+.daynav a span{font-size:11px;color:var(--muted)}
+.daynav a.race{border-color:var(--road);background:var(--run-soft)}
+
+/* day */
+.day{display:flex;flex-direction:column;gap:12px;scroll-margin-top:80px}
+.day-head{display:flex;flex-direction:column;gap:4px;border-top:3px solid var(--ink);padding-top:12px}
+.day-date{font-family:var(--f-mono);font-size:13px;color:var(--muted);letter-spacing:.04em}
+.day-sum{color:var(--muted);font-size:15px}
+
+/* legend + timeline */
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:14px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.trip{list-style:none;margin:0;padding:0;position:relative}
+.trip::before{content:"";position:absolute;left:58px;top:8px;bottom:8px;width:6px;border-radius:3px;
+  background:repeating-linear-gradient(to bottom,var(--line) 0 14px,transparent 14px 22px),var(--muted);opacity:.55}
+.stop{display:grid;grid-template-columns:48px 24px 1fr;column-gap:14px;padding-block:8px}
+.time{font-family:var(--f-mono);font-size:14px;font-weight:600;text-align:right;padding-top:12px}
+.node{position:relative;z-index:1;margin-top:13px;width:18px;height:18px;border-radius:50%;justify-self:center;
+  background:var(--surface);border:3px solid var(--muted)}
+.stop.charge .node{border-color:var(--charge);background:var(--charge)}
+.stop.opt .node{border-color:var(--opt)}
+.stop.key .node{border-color:var(--road);background:var(--road)}
+.stop.fam .node{border-color:var(--fam)}
+.card{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.stop.charge .card{border-color:var(--charge);box-shadow:inset 0 0 0 1px var(--charge)}
+.stop.key .card{border-color:var(--road);box-shadow:inset 0 0 0 1px var(--road)}
+.stop.minor .card{background:transparent;border-style:dashed}
+.card-top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px}
+.km{font-family:var(--f-mono);font-size:13px;color:var(--muted);white-space:nowrap}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;margin-right:6px;vertical-align:2px;font-family:var(--f-body)}
+.tag.c{background:var(--charge-soft);color:var(--charge)}
+.tag.o{background:var(--opt-soft);color:var(--opt)}
+.tag.r{background:var(--run-soft);color:var(--road)}
+.tag.f{background:var(--fam-soft);color:var(--fam)}
+.tag.x{background:transparent;color:var(--warn);border:1px solid var(--warn)}
+.card p{color:var(--muted);font-size:15px}
+.links{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:14px}
+.batt{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.bar{position:relative;flex:1;max-width:240px;height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.bar span{position:absolute;inset:0 auto 0 0;border-radius:5px}
+.bar .in{background:var(--warn);opacity:.75}
+.bar .out{background:var(--charge);opacity:.35}
+
+/* race-day split */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.split > div{min-width:0;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.split .run{background:var(--run-soft)}
+.split .famc{background:var(--fam-soft)}
+.split h4{margin:0;font-family:var(--f-display);font-size:14px;font-weight:600}
+.split .run h4{color:var(--road)} .split .famc h4{color:var(--fam)}
+.split p{font-size:14px;color:var(--ink)}
+@media (max-width:520px){.split{grid-template-columns:1fr}}
+
+/* info */
+section{display:flex;flex-direction:column;gap:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.grid2{grid-template-columns:1fr}}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.box p,.box li{color:var(--muted);font-size:15px}
+.box ul{margin:0;padding-left:20px}
+.bibs{display:flex;flex-wrap:wrap;gap:10px}
+.bib{border:2px solid var(--ink);border-radius:6px;padding:6px 14px;background:var(--surface);display:flex;flex-direction:column;line-height:1.2}
+.bib b{font-family:var(--f-mono);font-size:24px}
+.bib span{font-size:12px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips span{border:1px dashed var(--line);border-radius:999px;padding:3px 12px;font-size:14px;background:var(--surface);color:var(--muted)}
+.apps span{border-style:solid;color:var(--ink)}
+.tablewrap{overflow-x:auto}
+.pace{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums;min-width:520px}
+.pace th,.pace td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.pace th{font-family:var(--f-display);font-weight:600;color:var(--muted);font-size:13px}
+.pace td.n{font-family:var(--f-mono);white-space:nowrap}
+.pace .cut{color:var(--warn);font-family:var(--f-mono);white-space:nowrap}
+.pace .goal{color:var(--charge);font-family:var(--f-mono);font-weight:600;white-space:nowrap}
+.note{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+.btn{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;background:var(--road);color:var(--road-ink);
+  text-decoration:none;font-family:var(--f-display);font-weight:600;padding:10px 16px;border-radius:8px}
+@media (max-width:420px){
+  .stop{grid-template-columns:42px 20px 1fr;column-gap:10px}
+  .trip::before{left:50px}
+}
+</style>
+</head>
+<body>
+
+<main class="wrap">
+  <header class="head">
+    <div class="eyebrow">Pocari Trail · ทริปครอบครัว 6 คน · Xpeng X9</div>
+    <h1>กรุงเทพฯ ⇄ เชียงใหม่<br>12–17 พฤศจิกายน 2569</h1>
+    <div class="route-line">
+      ขาไป <span class="shield">1</span> กำแพงเพชร · ตาก · ลำปาง → เชียงใหม่ 3 คืน → นครสวรรค์ 1 คืน → บ้าน
+    </div>
+    <div class="facts">
+      <div class="fact"><b>5 วัน 4 คืน</b><span>ไป-กลับ</span></div>
+      <div class="fact"><b>2 + 4</b><span>คนวิ่ง + ครอบครัว</span></div>
+      <div class="fact"><b>~1,470</b><span>กิโลเมตรรวม</span></div>
+      <div class="fact"><b>อา 15</b><span>วันแข่ง</span></div>
+    </div>
+    <p class="lede">ตารางนี้จัดตามวันเปิด-ปิดของร้านในลิสต์ ร้านที่ปิดบางวันถูกวางไว้ในวันที่เปิด เวลาทั้งหมดเป็นค่าประมาณ ควรเช็กใน Google Maps อีกครั้งก่อนไป</p>
+  </header>
+
+  <nav class="daynav" aria-label="เลือกวัน">
+    <ul>
+      <li><a href="#d12"><b>12</b><span>พฤ</span></a></li>
+      <li><a href="#d13"><b>13</b><span>ศุกร์</span></a></li>
+      <li><a href="#d14"><b>14</b><span>เสาร์</span></a></li>
+      <li><a href="#d15" class="race"><b>15</b><span>วิ่ง</span></a></li>
+      <li><a href="#d16"><b>16</b><span>จันทร์</span></a></li>
+      <li><a href="#d17"><b>17</b><span>อังคาร</span></a></li>
+      <li><a href="#info"><b>ℹ︎</b><span>ข้อมูล</span></a></li>
+    </ul>
+  </nav>
+
+  <div class="legend">
+    <span><i style="background:var(--charge)"></i>จุดชาร์จ</span>
+    <span><i style="background:var(--road)"></i>ไฮไลต์</span>
+    <span><i style="border:2px solid var(--opt)"></i>แวะได้ ไม่บังคับ</span>
+    <span><i style="border:2px solid var(--fam)"></i>เฉพาะครอบครัว</span>
+  </div>
+
+  <!-- ===== 12 ===== -->
+  <section class="day" id="d12">
+    <div class="day-head">
+      <div class="day-date">พฤหัส 12 พ.ย.</div>
+      <h2>เตรียมตัว</h2>
+    </div>
+    <ol class="trip">
+      <li class="stop">
+        <div class="time">เย็น</div><div class="node"></div>
+        <div class="card">
+          <h3>ไปรับรถ เช็กรถ</h3>
+          <p>เช็กลมยาง อุปกรณ์ในรถ สายชาร์จพกพา ที่ชาร์จมือถือ น้ำดื่ม ขนม ทิชชู่ และถุงขยะ</p>
+        </div>
+      </li>
+      <li class="stop charge">
+        <div class="time">คืน</div><div class="node"></div>
+        <div class="card">
+          <h3><span class="tag c">⚡</span>ชาร์จให้เต็ม 100% และจัดกระเป๋า</h3>
+          <p>คนวิ่งเตรียมรองเท้าเทรล เป้น้ำ เจล เสื้อกันลม และไฟฉายคาดหัว เช็กรายการอุปกรณ์บังคับจากผู้จัดด้วย</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ===== 13 ===== -->
+  <section class="day" id="d13">
+    <div class="day-head">
+      <div class="day-date">ศุกร์ 13 พ.ย. · ~735 กม. · ขับ ~9½ ชม.</div>
+      <h2>กรุงเทพฯ → เชียงใหม่</h2>
+      <p class="day-sum">ถนนสาย 1 ผ่านกำแพงเพชรและตาก ชาร์จ 3 จุด ถึงโรงแรมราว 18:00</p>
+    </div>
+    <ol class="trip">
+      <li class="stop key">
+        <div class="time">05:30</div><div class="node"></div>
+        <div class="card">
+          <div class="card-top"><h3>ออกจากบ้าน (กรุงเทพฯ)</h3><span class="km">0 กม.</span></div>
+          <p>ออกเช้าเพื่อหลบรถติดเช้าวันศุกร์ช่วงวงแหวนและบางปะอิน</p>
+          <div class="batt"><span class="mono">100%</span><div class="bar"><span class="in" style="width:100%"></span></div></div>
+        </div>
+      </li>
+      <li class="stop minor">
+        <div class="time">06:30</div><div class="node"></div>
+        <div class="card"><div class="card-top"><h3>ปั๊มช่วงบางปะอิน / อยุธยา</h3><span class="km">~75 กม.</span></div><p>เข้าห้องน้ำ</p></div>
+      </li>
+      <li class="stop charge">
+        <div class="time">08:30</div><div class="node"></div>
+        <div class="card">
+          <div class="card-top"><h3><span class="tag c">⚡ ชาร์จ 1</span>นครสวรรค์</h3><span class="km">~240 กม.</span></div>
+          <p>ชาร์จ 35–45 นาที ระหว่างนั้นกินข้าวเช้า</p>
+          <div class="batt"><span class="mono">~47% → 85%</span><div class="bar"><span class="out" style="width:85%"></span><span class="in" style="width:47%"></span></div></div>
+        </div>
+      </li>
+      <li class="stop opt">
+        <div class="time">10:30</div><div class="node"></div>
+        <div class="card">
+          <div class="card-top"><h3><span class="tag o">แวะได้</span>อุทยานประวัติศาสตร์กำแพงเพชร</h3><span class="km">~355 กม.</span></div>
+          <p>มรดกโลก ใช้เวลา 30–45 นาที แล้วซื้อกล้วยไข่</p>
+        </div>
+      </li>
+      <li class="stop charge">
+        <div class="time">11:45</div><div class="node"></div>
+        <div class="card">
+          <div class="card-top"><h3><span class="tag c">⚡ ชาร์จ 2</span>ตาก</h3><span class="km">~420 กม.</span></div>
+          <p><strong>ชาร์จให้ถึง 90%</strong> ก่อนเข้าช่วงเขาตาก–เถิน แล้วกินข้าวกลางวัน</p>
+          <div class="batt"><span class="mono">~45% → 90%</span><div class="bar"><span class="out" style="width:90%"></span><span class="in" style="width:45%"></span></div></div>
+        </div>
+      </li>
+      <li class="stop opt">
+        <div class="time">15:00</div><div class="node"></div>
+        <div class="card">
+          <div class="card-top"><h3><span class="tag o">แวะได้</span>วัดพระธาตุลำปางหลวง</h3><span class="km">~610 กม.</span></div>
+          <p>อยู่ที่อำเภอเกาะคา ใกล้เส้นทาง ใช้เวลาราว 30 นาที</p>
+        </div>
+      </li>
+      <li class="stop charge">
+        <div class="time">15:45</div><div class="node"></div>
+        <div class="card">
+          <div class="card-top"><h3><span class="tag c">⚡ ชาร์จ 3</span>ลำปาง</h3><span class="km">~640 กม.</span></div>
+          <p>เช่น ที่เซ็นทรัลลำปาง พักดื่มกาแฟ จากนั้นใช้สาย 11 ผ่านดอยขุนตาล ทางคดเคี้ยว ขับช้า ๆ</p>
+          <div class="batt"><span class="mono">~38% → 70%</span><div class="bar"><span class="out" style="width:70%"></span><span class="in" style="width:38%"></span></div></div>
+        </div>
+      </li>
+      <li class="stop key">
+        <div class="time">18:00</div><div class="node"></div>
+        <div class="card">
+          <div class="card-top"><h3>🏨 เช็กอิน Travelodge Nimman</h3><span class="km">~735 กม.</span></div>
+          <p>ถามโรงแรมว่ามีที่ชาร์จรถไหม วันนี้รับ bib ที่ CMECC ได้แล้ว แต่กว่าจะถึงเชียงใหม่คงเย็นเกินไป จึงวางไว้ไปรับวันเสาร์</p>
+          <div class="links"><a href="https://maps.app.goo.gl/8XiPyFLTMoTd5AWo7" target="_blank" rel="noopener">แผนที่โรงแรม ↗</a></div>
+        </div>
+      </li>
+      <li class="stop">
+        <div class="time">18:45</div><div class="node"></div>
+        <div class="card">
+          <h3>มื้อเย็น ไก่ย่างเชิงดอย</h3>
+          <p>อยู่ใกล้โรงแรม 5–10 นาที วันจันทร์ร้านปิด จึงควรกินคืนนี้ ร้านปิดราว 20:00 ถ้าไม่ทันไปสุกี้ช้างเผือก หลัง มช. (เปิดถึง 23:00)</p>
+          <div class="links">
+            <a href="https://www.google.com/maps/search/?api=1&query=ไก่ย่างเชิงดอย" target="_blank" rel="noopener">ไก่ย่างเชิงดอย ↗</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=สุกี้ช้างเผือก+หลังมช" target="_blank" rel="noopener">สุกี้ช้างเผือก ↗</a>
+          </div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ===== 14 ===== -->
+  <section class="day" id="d14">
+    <div class="day-head">
+      <div class="day-date">เสาร์ 14 พ.ย. · ทั้ง 6 คนไปด้วยกัน</div>
+      <h2>รับ bib และเที่ยวเบา ๆ</h2>
+      <p class="day-sum">คนวิ่งเก็บแรงไว้ ไม่เดินเยอะ ตอนบ่ายกลับไปนอนพัก</p>
+    </div>
+    <ol class="trip">
+      <li class="stop">
+        <div class="time">07:00</div><div class="node"></div>
+        <div class="card">
+          <h3>อ่างแก้ว มช.</h3>
+          <p>คนวิ่งจ็อกเบา ๆ 15–20 นาที ครอบครัวเดินเล่นชมวิวดอยสุเทพ ใกล้โรงแรม 5 นาที</p>
+          <div class="links"><a href="https://www.google.com/maps/search/?api=1&query=อ่างแก้ว+มช" target="_blank" rel="noopener">แผนที่ ↗</a></div>
+        </div>
+      </li>
+      <li class="stop">
+        <div class="time">08:30</div><div class="node"></div>
+        <div class="card">
+          <h3>กินเช้าที่ Groon แล้วซื้อกาแฟ</h3>
+          <p>Groon อยู่นิมมานซอย 7 ร้านกาแฟคือ Roast8ry หรือ Toffee Roaster ที่นิมมานซอย 17</p>
+          <div class="links">
+            <a href="https://www.google.com/maps/search/?api=1&query=Groon+Nimman" target="_blank" rel="noopener">Groon ↗</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Roast8ry" target="_blank" rel="noopener">Roast8ry ↗</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Toffee+Roaster+Chiang+Mai" target="_blank" rel="noopener">Toffee Roaster ↗</a>
+          </div>
+        </div>
+      </li>
+      <li class="stop">
+        <div class="time">10:00</div><div class="node"></div>
+        <div class="card">
+          <h3><span class="tag x">ศ–อา เท่านั้น</span>Khagee (แครอทเค้ก)</h3>
+          <p>อยู่ย่านวัดเกต ร้านเปิด 10:00 และของหมดเร็ว ควรไปตอนร้านเปิด</p>
+          <div class="links"><a href="https://www.google.com/maps/search/?api=1&query=Khagee+Chiang+Mai" target="_blank" rel="noopener">แผนที่ ↗</a></div>
+        </div>
+      </li>
+      <li class="stop key">
+        <div class="time">10:45</div><div class="node"></div>
+        <div class="card">
+          <h3><span class="tag r">คนวิ่ง</span>รับ bib ที่ CMECC</h3>
+          <p>รับได้วันศุกร์ 13 ถึงเสาร์ 14 พ.ย. จากวัดเกตขับราว 30 นาที เป็นสถานที่เดียวกับจุดสตาร์ท จะได้ดูทางเข้าและที่จอดรถไว้สำหรับเช้าวันแข่งด้วย พกบัตรประชาชนและหลักฐานการสมัครของทั้ง 2 คนไปด้วย และเช็กเวลาเปิด-ปิดก่อนไป</p>
+          <div class="links"><a href="https://www.google.com/maps/search/?api=1&query=ศูนย์ประชุมและแสดงสินค้านานาชาติเชียงใหม่" target="_blank" rel="noopener">แผนที่ CMECC ↗</a></div>
+        </div>
+      </li>
+      <li class="stop">
+        <div class="time">12:00</div><div class="node"></div>
+        <div class="card">
+          <h3><span class="tag x">ปิดวันอาทิตย์</span>ข้าวซอยแม่สาย</h3>
+          <p>อยู่ถนนราชพฤกษ์ ปิด 16:00 คิวยาวช่วงเที่ยง ข้าวซอยแม่มณีเป็นร้านสำรอง ปิด 15:30</p>
+          <div class="links">
+            <a href="https://www.google.com/maps/search/?api=1&query=ข้าวซอยแม่สาย" target="_blank" rel="noopener">แม่สาย ↗</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=ข้าวซอยแม่มณี" target="_blank" rel="noopener">แม่มณี ↗</a>
+          </div>
+        </div>
+      </li>
+      <li class="stop">
+        <div class="time">13:30</div><div class="node"></div>
+        <div class="card">
+          <h3><span class="tag x">ปิดวันจันทร์</span>บ้านข้างวัด</h3>
+          <p>อยู่ซอยวัดอุโมงค์ เดินดูร้านงานคราฟต์ แล้วต่อที่ The Baristro Asian Style บนถนนสุเทพ (มัทฉะ สวนญี่ปุ่น ค่าเข้าราว 80 บาท หักเป็นค่าเครื่องดื่มได้)</p>
+          <div class="links">
+            <a href="https://www.google.com/maps/search/?api=1&query=บ้านข้างวัด" target="_blank" rel="noopener">บ้านข้างวัด ↗</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=The+Baristro+Asian+Style" target="_blank" rel="noopener">The Baristro ↗</a>
+          </div>
+        </div>
+      </li>
+      <li class="stop fam">
+        <div class="time">15:30</div><div class="node"></div>
+        <div class="card">
+          <div class="split">
+            <div class="run"><h4>คนวิ่ง</h4><p>กลับโรงแรม นอนพัก ยกขาสูง</p></div>
+            <div class="famc"><h4>ครอบครัว</h4><p>Trial Matcha หลัง มช. หรือ Matcha Cabinet หรือช้อปที่นิมมาน</p></div>
+          </div>
+          <div class="links">
+            <a href="https://www.google.com/maps/search/?api=1&query=Trial+Matcha+Chiang+Mai" target="_blank" rel="noopener">Trial Matcha ↗</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Matcha+Cabinet+Chiang+Mai" target="_blank" rel="noopener">Matcha Cabinet ↗</a>
+          </div>
+        </div>
+      </li>
+      <li class="stop">
+        <div class="time">17:30</div><div class="node"></div>
+        <div class="card">
+          <h3>มื้อเย็นคาร์บ Adirak Pizza</h3>
+          <p>สาขาซอยวัดอุโมงค์ คนวิ่งไม่กินเผ็ดและไม่ลองอาหารแปลกใหม่ จากนั้นชาร์จรถให้พร้อม (One Nimman / MAYA / เซ็นทรัลเฟสติวัล)</p>
+          <div class="links"><a href="https://www.google.com/maps/search/?api=1&query=Adirak+Pizza+Wat+Umong" target="_blank" rel="noopener">แผนที่ ↗</a></div>
+        </div>
+      </li>
+      <li class="stop fam">
+        <div class="time">19:30</div><div class="node"></div>
+        <div class="card">
+          <div class="split">
+            <div class="run"><h4>คนวิ่ง</h4><p>ติด bib จัดเป้ เตรียมเจลและไฟฉาย นอนก่อน 21:00</p></div>
+            <div class="famc"><h4>ครอบครัว (ไม่บังคับ)</h4><p>ถนนคนเดินวันเสาร์ วัวลาย หรือ Gin Udon ถนนคชสาร</p></div>
+          </div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ===== 15 ===== -->
+  <section class="day" id="d15">
+    <div class="day-head">
+      <div class="day-date">อาทิตย์ 15 พ.ย. · วันแข่ง</div>
+      <h2>🏃 Pocari Trail · PST 15</h2>
+      <p class="day-sum">จุดสตาร์ทและเส้นชัยอยู่ที่เดียวกัน คือศูนย์ประชุมและแสดงสินค้านานาชาติเชียงใหม่ (CMECC) ห่างโรงแรมราว 20 นาที ระหว่างที่คนวิ่งแข่ง ครอบครัวใช้รถไปเที่ยวตอนเช้า แล้วกลับมารอเชียร์ที่เส้นชัย</p>
+    </div>
+    <div class="bibs">
+      <div class="bib"><span>printer · Block C</span><b>1646</b></div>
+      <div class="bib"><span>ploy · Block C</span><b>2650</b></div>
+    </div>
+    <div class="facts">
+      <div class="fact"><b>15 กม.</b><span>ระยะทาง</span></div>
+      <div class="fact"><b>+640 ม.</b><span>ไต่สะสม จุดสูงสุด ~780 ม.</span></div>
+      <div class="fact"><b>07:00</b><span>Block C ปล่อยตัว</span></div>
+      <div class="fact"><b>12:00</b><span>ตัดตัวที่เส้นชัย</span></div>
+    </div>
+    <div class="box">
+      <h3>จุดบริการและเวลาตัดตัว</h3>
+      <ul>
+        <li><strong>B1 หนองจอก</strong> · กม. 4.3 · แนะนำให้ถึงภายใน 07:45 · ช่วงแรกเป็นทางราบ</li>
+        <li><strong>T1 จุดจับเวลา</strong> · กม. 5.4 · <span style="color:var(--warn)">ตัดตัว 08:30</span> · หลัง B1 เริ่มขึ้นเขาชัน</li>
+        <li><strong>B2 ค่ายลูกเสือ</strong> · กม. 10.4 · <span style="color:var(--warn)">ตัดตัว 10:30</span> · ช่วงยอดเขาถึงจุดนี้เป็นทางลงยาว</li>
+        <li><strong>เส้นชัย CMECC</strong> · กม. 15 · <span style="color:var(--warn)">ตัดตัว 12:00</span> · มีอาหาร ห้องน้ำ และรถพยาบาล</li>
+      </ul>
+      <p>ปล่อยตัว 4 Block ห่างกันทีละ 15 นาที คือ 06:30, 06:45, 07:00 และ 07:15 ส่วน T1 เป็นจุดจับเวลา ไม่มีน้ำบริการ</p>
+    </div>
+    <div class="box">
+      <h3>แผน pace ของ Block C (ปล่อยตัว 07:00)</h3>
+      <p>เวลาตัดตัวนับเป็นเวลานาฬิกาจริง ไม่ได้นับจากเวลาปล่อยตัวของแต่ละ Block คนที่ปล่อยตัว 07:00 จึงมีเวลาน้อยกว่า Block แรก 30 นาที เหลือเวลาทั้งหมด 5 ชม.</p>
+      <div class="tablewrap">
+      <table class="pace">
+        <thead><tr><th>ช่วง</th><th>กม.</th><th>ไต่ / ลง</th><th>pace เป้า</th><th>ถึงตามเป้า</th><th>ตัดตัว</th></tr></thead>
+        <tbody>
+          <tr><td>Start → B1 หนองจอก<br><small>ทางราบ วิ่งเบา ๆ</small></td><td class="n">4.3</td><td class="n">เกือบราบ</td><td class="n">8:30–9:00</td><td class="goal">07:38</td><td class="n">07:45 แนะนำ</td></tr>
+          <tr><td>B1 → T1<br><small>ขึ้นเขาชัน เดินเร็ว</small></td><td class="n">1.1</td><td class="n">+205 / −1</td><td class="n">20–22</td><td class="goal">08:02</td><td class="cut">08:30</td></tr>
+          <tr><td>T1 → B2 ค่ายลูกเสือ<br><small>ขึ้นยอด ~780 ม. แล้วลงยาว</small></td><td class="n">5.0</td><td class="n">+249 / −398</td><td class="n">14–15</td><td class="goal">09:15</td><td class="cut">10:30</td></tr>
+          <tr><td>B2 → Finish<br><small>เนินเล็ก แล้วลงเข้าเมือง</small></td><td class="n">4.6</td><td class="n">+103 / −185</td><td class="n">10–11</td><td class="goal">10:05</td><td class="cut">12:00</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p><strong>ช่วงที่เสี่ยงสุดคือ T1 ตัดตัว 08:30</strong> มีเวลาแค่ 90 นาทีสำหรับ 5.4 กม. ถ้าถึง B1 หลัง 07:55 เริ่มเสี่ยง ต้องเดินขึ้นเขาไม่หยุด ผ่าน T1 ได้แล้วจะสบายขึ้นมาก เพราะมีเวลา 2 ชม. สำหรับ 5 กม. ถัดไป</p>
+      <div class="links"><a href="https://www.google.com/maps/search/?api=1&query=ศูนย์ประชุมและแสดงสินค้านานาชาติเชียงใหม่" target="_blank" rel="noopener">แผนที่ CMECC ↗</a></div>
+    </div>
+    <ol class="trip">
+      <li class="stop key">
+        <div class="time">05:30</div><div class="node"></div>
+        <div class="card">
+          <h3>ออกจากโรงแรมไป CMECC</h3>
+          <p>ตื่น 04:45 คนวิ่งกินมื้อเบา ๆ เช่น ขนมปังหรือกล้วย ครอบครัวขับรถไปส่งให้ถึงราว 06:00 เผื่อเวลารถติดหน้างาน เข้าห้องน้ำ และวอร์มอัพ</p>
+          <p>นัดจุดเจอหลังเข้าเส้นชัยไว้ล่วงหน้า</p>
+        </div>
+      </li>
+      <li class="stop fam">
+        <div class="time">07:00</div><div class="node"></div>
+        <div class="card">
+          <div class="split">
+            <div class="run"><h4>คนวิ่ง</h4><p>🏃 Block C ปล่อยตัว 07:00 ต้องผ่าน T1 ก่อน 08:30 และผ่าน B2 ก่อน 10:30</p></div>
+            <div class="famc"><h4>ครอบครัว</h4><p>06:15 ออกจาก CMECC ไปกินเช้าที่<strong>โกเหน่ง</strong> (ปาท่องโก๋ ถนนวิชยานนท์) แล้วไป<strong>จริงใจมาร์เก็ต</strong> (ตลาดเปิดเฉพาะเสาร์-อาทิตย์) ออกจากตลาดไม่เกิน 08:45</p></div>
+          </div>
+          <div class="links">
+            <a href="https://www.google.com/maps/search/?api=1&query=โกเหน่ง+เชียงใหม่" target="_blank" rel="noopener">โกเหน่ง ↗</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=จริงใจมาร์เก็ต" target="_blank" rel="noopener">จริงใจมาร์เก็ต ↗</a>
+          </div>
+        </div>
+      </li>
+      <li class="stop key">
+        <div class="time">09:15</div><div class="node"></div>
+        <div class="card">
+          <h3><span class="tag f">ครอบครัว</span>กลับไปรอเชียร์ที่เส้นชัย CMECC</h3>
+          <p>เทรล 15 กม. ไต่ 640 ม. คนวิ่งส่วนใหญ่ใช้เวลาราว 2½–4 ชม. น่าจะเข้าเส้นชัยราว 09:30–11:00 ถ้าดูแอปติดตามผลของงานได้ ให้ดูเวลาที่ผ่าน B2 แล้วบวกอีกราว 45–60 นาที</p>
+        </div>
+      </li>
+      <li class="stop">
+        <div class="time">11:30</div><div class="node"></div>
+        <div class="card">
+          <h3>มื้อฉลองจบงาน ทับปิง</h3>
+          <p>ร้านริมน้ำปิง ย่านป่าแดด อยู่ในมิชลินไกด์ ควรจองล่วงหน้า ร้านสำรองคือคั่วไก่นิมมาน แต่ช่วงเที่ยงวันอาทิตย์คนเยอะ</p>
+          <div class="links">
+            <a href="https://www.google.com/maps/search/?api=1&query=Tub+Ping+Chiang+Mai" target="_blank" rel="noopener">ทับปิง ↗</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=คั่วไก่นิมมาน" target="_blank" rel="noopener">คั่วไก่นิมมาน ↗</a>
+          </div>
+        </div>
+      </li>
+      <li class="stop fam">
+        <div class="time">บ่าย</div><div class="node"></div>
+        <div class="card">
+          <div class="split">
+            <div class="run"><h4>คนวิ่ง</h4><p>อาบน้ำ นวดคลายกล้ามเนื้อ แล้วงีบ</p></div>
+            <div class="famc"><h4>ครอบครัว (ไม่บังคับ)</h4><p>วัดพระธาตุดอยสุเทพ ห่างโรงแรมราว 30 นาที มีรถรางขึ้น ไม่ต้องเดินบันได 306 ขั้น</p></div>
+          </div>
+          <div class="links"><a href="https://www.google.com/maps/search/?api=1&query=วัดพระธาตุดอยสุเทพ" target="_blank" rel="noopener">ดอยสุเทพ ↗</a></div>
+        </div>
+      </li>
+      <li class="stop">
+        <div class="time">17:30</div><div class="node"></div>
+        <div class="card">
+          <h3>ถนนคนเดินวันอาทิตย์ ประตูท่าแพ</h3>
+          <p>ไปกันทั้ง 6 คน ถ้าขายังไหว ของหวานปิดท้ายที่โรตีป้าเด (ถนนท่าแพ หน้าวัดเชตวัน เช็กก่อนว่าวันอาทิตย์เปิดไหม) หรือ Magokoro Teahouse (เปิดถึง 21:00) ถ้าอยากฉลองต่อ ไปออย โอ๊ต หมูกระทะ (เปิด 17:30)</p>
+          <div class="links">
+            <a href="https://www.google.com/maps/search/?api=1&query=ประตูท่าแพ" target="_blank" rel="noopener">ประตูท่าแพ ↗</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=โรตีป้าเด" target="_blank" rel="noopener">โรตีป้าเด ↗</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Magokoro+teahouse" target="_blank" rel="noopener">Magokoro ↗</a>
+          </div>
+        </div>
+      </li>
+      <li class="stop charge">
+        <div class="time">คืน</div><div class="node"></div>
+        <div class="card"><h3><span class="tag c">⚡</span>ชาร์จรถให้เต็ม 100%</h3><p>พรุ่งนี้ขับลงนครสวรรค์ประมาณ 495 กม.</p></div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ===== 16 ===== -->
+  <section class="day" id="d16">
+    <div class="day-head">
+      <div class="day-date">จันทร์ 16 พ.ย. · ~495 กม. · ขับ ~6½ ชม.</div>
+      <h2>เชียงใหม่ → นครสวรรค์</h2>
+      <p class="day-sum">ช่วงเช้าซื้อของฝากก่อนออก ชาร์จ 1 ครั้งที่ตาก ถึงนครสวรรค์ราว 16:30</p>
+    </div>
+    <ol class="trip">
+      <li class="stop">
+        <div class="time">07:00</div><div class="node"></div>
+        <div class="card">
+          <h3>กินเช้า แล้วไปตลาดวโรรส</h3>
+          <p>ถ้าเมื่อวานยังไม่ได้ไปโกเหน่ง กินเช้าที่นั่นได้ จากนั้นซื้อของฝากที่ตลาดวโรรส เช่น ไส้อั่ว แคบหมู และน้ำพริกหนุ่ม แล้วเดินถนนช้างม่อยเก่า</p>
+          <div class="links">
+            <a href="https://www.google.com/maps/search/?api=1&query=ตลาดวโรรส" target="_blank" rel="noopener">ตลาดวโรรส ↗</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=ถนนช้างม่อยเก่า" target="_blank" rel="noopener">ช้างม่อยเก่า ↗</a>
+          </div>
+        </div>
+      </li>
+      <li class="stop key">
+        <div class="time">09:30</div><div class="node"></div>
+        <div class="card">
+          <div class="card-top"><h3>เช็กเอาต์ ออกจากเชียงใหม่</h3><span class="km">0 กม.</span></div>
+          <p>ใช้สาย 11 ไปลำปาง แล้วต่อสาย 1 ขาขึ้นดอยขุนตาลรถกินไฟมากกว่าปกติ แวะพักที่ลำปางราว 11:00</p>
+          <div class="batt"><span class="mono">100%</span><div class="bar"><span class="in" style="width:100%"></span></div></div>
+        </div>
+      </li>
+      <li class="stop charge">
+        <div class="time">13:15</div><div class="node"></div>
+        <div class="card">
+          <div class="card-top"><h3><span class="tag c">⚡ ชาร์จ</span>ตาก และกินข้าวกลางวัน</h3><span class="km">~315 กม.</span></div>
+          <div class="batt"><span class="mono">~30% → 75%</span><div class="bar"><span class="out" style="width:75%"></span><span class="in" style="width:30%"></span></div></div>
+        </div>
+      </li>
+      <li class="stop opt">
+        <div class="time">15:15</div><div class="node"></div>
+        <div class="card">
+          <h3><span class="tag o">แวะได้</span>อุทยานประวัติศาสตร์กำแพงเพชร</h3>
+          <p>แวะได้ถ้าขาไปยังไม่ได้แวะ</p>
+        </div>
+      </li>
+      <li class="stop key">
+        <div class="time">16:30</div><div class="node"></div>
+        <div class="card">
+          <div class="card-top"><h3>🏨 เช็กอิน GO Hotel Nakhon Sawan</h3><span class="km">~495 กม.</span></div>
+          <p>ช่วงเย็นไปดูแสงไฟที่พาสาน (ปากน้ำโพ ต้นแม่น้ำเจ้าพระยา) กินข้าวเย็นในเมือง และชาร์จรถให้ถึงราว 80%</p>
+          <div class="batt"><span class="mono">~35%</span><div class="bar"><span class="in" style="width:35%"></span></div></div>
+          <div class="links"><a href="https://maps.app.goo.gl/3yCuqTfLJC4SNNYF8" target="_blank" rel="noopener">แผนที่โรงแรม ↗</a></div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ===== 17 ===== -->
+  <section class="day" id="d17">
+    <div class="day-head">
+      <div class="day-date">อังคาร 17 พ.ย. · ~240 กม. · ขับ ~3–3½ ชม.</div>
+      <h2>นครสวรรค์ → บ้าน</h2>
+    </div>
+    <ol class="trip">
+      <li class="stop opt">
+        <div class="time">เช้า</div><div class="node"></div>
+        <div class="card">
+          <h3><span class="tag o">แวะได้</span>วัดคีรีวงศ์ หรือ บึงบอระเพ็ด</h3>
+          <p>วัดคีรีวงศ์เป็นจุดชมวิวเมืองบนเขา จากนั้นซื้อขนมโมจินครสวรรค์เป็นของฝาก</p>
+        </div>
+      </li>
+      <li class="stop key">
+        <div class="time">12:00</div><div class="node"></div>
+        <div class="card">
+          <h3>เช็กเอาต์ กินข้าวกลางวัน แล้วออกเดินทาง</h3>
+          <p>ออกราว 12:30 ใช้สาย 32 ไปบางปะอิน แล้วต่อวงแหวน 9 แวะปั๊มช่วงสิงห์บุรีหรืออ่างทอง</p>
+        </div>
+      </li>
+      <li class="stop key">
+        <div class="time">16:00</div><div class="node"></div>
+        <div class="card">
+          <h3>🏠 ถึงบ้าน</h3>
+          <p>ถึงก่อนรถติดช่วงเย็นแถวบางใหญ่และวงแหวน</p>
+          <div class="batt"><span class="mono">~27%</span><div class="bar"><span class="in" style="width:27%"></span></div></div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ===== info ===== -->
+  <section id="info" class="day">
+    <div class="day-head"><div class="day-date">ข้อมูลประกอบ</div><h2>ก่อนออกเดินทาง</h2></div>
+    <div class="grid2">
+      <div class="box">
+        <h3>ที่พัก</h3>
+        <ul>
+          <li><a href="https://maps.app.goo.gl/8XiPyFLTMoTd5AWo7" target="_blank" rel="noopener">Travelodge Nimman</a> · 13–16 พ.ย. (3 คืน)</li>
+          <li><a href="https://maps.app.goo.gl/3yCuqTfLJC4SNNYF8" target="_blank" rel="noopener">GO Hotel Nakhon Sawan</a> · 16–17 พ.ย. (เช็กอิน 14:00 เช็กเอาต์ 12:00)</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h3>เรื่องชาร์จ</h3>
+        <ul>
+          <li>ขับไฮเวย์เต็มคัน วิ่งได้จริงราว 400–450 กม. ต่อการชาร์จ 1 ครั้ง</li>
+          <li>หัวชาร์จ DC ต่างจังหวัดชาร์จจาก 20% ถึง 80% ใช้ราว 25–40 นาที</li>
+          <li>ช่วงไฮซีซั่นและช่วงงานวิ่ง หัวชาร์จอาจต้องรอคิว ควรเปิดแอปเช็กก่อนถึงทุกจุด</li>
+        </ul>
+      </div>
+    </div>
+    <div class="chips apps">
+      <span>EA Anywhere</span><span>PTT EV Station PluZ</span><span>PEA Volta</span><span>EleXA (กฟผ.)</span><span>Xpeng</span>
+    </div>
+    <div class="box">
+      <h3>ร้านในลิสต์ที่ยังไม่ได้ลงแผน</h3>
+      <p>ยังหาไม่เจอว่าอยู่ตรงไหนหรือเปิดเมื่อไร แทรกเข้าไปได้ตามสะดวก</p>
+      <div class="chips">
+        <span>NYMPH</span><span>Arkaroek</span><span>Robs berry</span><span>97% nothing but cocoa</span><span>Your project</span>
+        <span>London.cnx</span><span>Pari.cnx</span><span>joost</span><span>koop</span><span>samorn</span><span>Mandala cocoa</span>
+        <span>หลึก</span><span>Late nite cookie</span><span>Kusa</span><span>Day by day</span><span>ขนมจีนแม่ป้อม</span><span>มหาลาบ</span>
+        <span>ติ๋ม นมสด</span><span>เค้กบ้านเปี่ยมสุข</span><span>Graph ท่าแพ</span><span>เฮือนม่วนใจ๋</span><span>Lucky Vietnam</span>
+        <span>North Gate Spirit</span><span>กาญจน์โภชนา</span><span>ปิ้งปัง ตลาดสันป่าข่อย</span><span>ก๋วยจั๊บช้างม่อย</span>
+      </div>
+      <p>ที่อยู่ไกลเมือง: WTF Coffee Camp ที่แม่ริม (ขับราว 45 นาที) และม่อนกุเวรที่แม่กำปอง (ขับราว 1 ชม. 15 นาที)</p>
+    </div>
+  </section>
+
+  <p class="note">ระยะทาง เวลา และ % แบตทั้งหมดเป็นค่าประมาณ วันและเวลาเปิดร้านมาจากเว็บรีวิว บางแหล่งข้อมูลขัดกัน ควรเช็กใน Google Maps หรือเพจของร้านก่อนไป</p>
+</main>
+</body>
+</html>
